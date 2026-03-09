@@ -8,12 +8,12 @@ from orion.tools.base import BaseTool
 
 
 class WebContentLoadArgs(BaseModel):
-    url: str = Field(..., description="HTTP/HTTPS url")
+    url: str = Field(..., description="URL вида HTTP/HTTPS")
 
 
 class WebContentLoadTool(BaseTool):
     name = "web_content_load"
-    description = "Load a web page and return cleaned main textual content."
+    description = "Загружает веб-страницу и возвращает очищенный основной текст."
     args_schema = WebContentLoadArgs
 
     def execute(self, **kwargs) -> str:
@@ -26,4 +26,4 @@ class WebContentLoadTool(BaseTool):
             tag.decompose()
 
         text = " ".join(soup.get_text(separator=" ").split())
-        return text[:8000] if text else "No readable text extracted."
+        return text[:8000] if text else "Не удалось извлечь читаемый текст."

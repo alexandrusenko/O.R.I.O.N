@@ -25,9 +25,9 @@ class SafetyLayer:
         lowered = command.lower()
         for pattern in BLACKLIST_PATTERNS:
             if pattern.lower() in lowered:
-                return SafetyDecision(False, False, f"Pattern '{pattern}' is blocked")
+                return SafetyDecision(False, False, f"Паттерн '{pattern}' заблокирован")
 
         if command.strip() in WHITELIST_COMMANDS:
-            return SafetyDecision(True, False, "whitelisted")
+            return SafetyDecision(True, False, "команда из белого списка")
 
-        return SafetyDecision(True, True, "non-whitelisted command")
+        return SafetyDecision(True, True, "команда вне белого списка")

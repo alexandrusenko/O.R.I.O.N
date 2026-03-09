@@ -1,24 +1,36 @@
 # O.R.I.O.N.
 
-O.R.I.O.N. (Omni-Resourceful Intelligent Operations Network) is a local-first AI assistant built around LangGraph, modular tools, safety controls, and terminal UX.
+O.R.I.O.N. (Omni-Resourceful Intelligent Operations Network) — локальный AI-ассистент с модульной архитектурой, графом выполнения на LangGraph, инструментами и слоем безопасности.
 
-## Current implementation
+## Что реализовано
 
-- Modular architecture (`core`, `tools`, `memory`, `safety`, `ui`, `config`).
-- LangGraph nodes implemented: `retriever_node`, `agent_node`, `tool_executor_node`, `memory_update_node`, `human_input_node`.
-- Dynamic tool loading from `orion/tools` with runtime reload command.
-- Tools: `web_search`, `web_content_load`, `create_file`, `exec_command`, `get_system_info`.
-- Safety layer:
-  - blacklist for destructive commands,
-  - whitelist for safe read-only commands,
-  - confirmation gate for non-whitelisted commands.
-- Memory:
-  - STM in SQLite (conversation log),
-  - LTM in SQLite with local semantic scoring retrieval.
-- Prompt protocol + parser for structured tool decisions in JSON blocks.
-- Interactive Rich + prompt_toolkit console app.
+- Модульная архитектура (`core`, `tools`, `memory`, `safety`, `ui`, `config`).
+- Узлы графа: `retriever_node`, `agent_node`, `tool_executor_node`, `result_analyzer_node`, `memory_update_node`, `human_input_node`.
+- Динамическая загрузка инструментов из `orion/tools` с перезагрузкой во время работы.
+- Инструменты: `web_search`, `web_content_load`, `create_file`, `exec_command`, `get_system_info`.
+- Слой безопасности:
+  - чёрный список деструктивных паттернов,
+  - белый список безопасных read-only команд,
+  - подтверждение для не-whitelist команд.
+- Память:
+  - STM в SQLite (лог диалога),
+  - LTM в SQLite с локальным retrieval по семантической близости.
+- Протокол ответов в JSON-блоках для вызова инструментов.
+- Интерактивный терминальный интерфейс на Rich + prompt_toolkit.
 
-## Interactive run
+## Агентный цикл
+
+Ассистент работает по итеративному циклу:
+
+1. Строит план шагов.
+2. Выполняет шаг инструментом.
+3. Анализирует результат шага:
+   - если результат соответствует ожиданию — идёт дальше;
+   - если есть ошибка — пытается исправить и повторить;
+   - если результат не соответствует ожидаемому — перестраивает план.
+4. Повторяет цикл до целевого результата или до явного ограничивающего фактора.
+
+## Запуск
 
 ```bash
 python -m venv .venv
@@ -27,10 +39,10 @@ pip install -e .
 python -m orion.app
 ```
 
-Exit commands: `exit` / `quit`.
-Reload tools at runtime: `Обнови свои инструменты`.
+Команды выхода: `exit` / `quit`.
+Перезагрузка инструментов на лету: `Обнови свои инструменты`.
 
 ## LM Studio
 
-Default endpoint: `http://localhost:1234/v1`.
-Model and runtime settings are defined in `orion/config/settings.py`.
+Базовый endpoint: `http://localhost:1234/v1`.
+Модель и runtime-настройки задаются в `orion/config/settings.py`.

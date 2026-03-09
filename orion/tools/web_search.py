@@ -7,12 +7,12 @@ from orion.tools.base import BaseTool
 
 
 class WebSearchArgs(BaseModel):
-    query: str = Field(..., description="Search query")
+    query: str = Field(..., description="Поисковый запрос")
 
 
 class WebSearchTool(BaseTool):
     name = "web_search"
-    description = "Search the web and return top-5 results with snippets."
+    description = "Ищет информацию в интернете и возвращает топ-5 результатов с фрагментами."
     args_schema = WebSearchArgs
 
     def execute(self, **kwargs) -> str:
@@ -20,7 +20,7 @@ class WebSearchTool(BaseTool):
         with DDGS() as ddgs:
             results = list(ddgs.text(args.query, max_results=5))
         if not results:
-            return "No search results found."
+            return "По запросу ничего не найдено."
 
         lines = []
         for item in results:

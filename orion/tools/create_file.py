@@ -8,13 +8,13 @@ from orion.tools.base import BaseTool
 
 
 class CreateFileArgs(BaseModel):
-    filename: str = Field(..., description="Path relative to workspace")
-    content: str = Field(..., description="File content")
+    filename: str = Field(..., description="Путь относительно workspace")
+    content: str = Field(..., description="Содержимое файла")
 
 
 class CreateFileTool(BaseTool):
     name = "create_file"
-    description = "Create a file inside workspace with given content."
+    description = "Создаёт файл внутри workspace с указанным содержимым."
     args_schema = CreateFileArgs
 
     def execute(self, **kwargs) -> str:
@@ -24,8 +24,8 @@ class CreateFileTool(BaseTool):
         target = (base / args.filename).resolve()
 
         if base not in target.parents and target != base:
-            raise ValueError("Path escape detected: file must stay in workspace.")
+            raise ValueError("Обнаружен выход за пределы пути: файл должен оставаться в workspace.")
 
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(args.content, encoding="utf-8")
-        return f"Created file: {target}"
+        return f"Файл создан: {target}"
