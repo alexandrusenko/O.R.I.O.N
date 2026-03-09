@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 from typing import Any
+import json
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from openai import OpenAI
@@ -24,11 +23,6 @@ class LMStudioChatModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "lmstudio-openai"
-
-    def bind_tools(self, tools: list[BaseTool | dict[str, Any]], **kwargs: Any) -> Runnable:
-        """Bind tool schemas for LangChain/LangGraph agent executors."""
-        openai_tools = [convert_to_openai_tool(tool) if isinstance(tool, BaseTool) else tool for tool in tools]
-        return self.bind(tools=openai_tools, **kwargs)
 
     def _convert_messages(self, messages: list[BaseMessage]) -> list[dict[str, Any]]:
         payload: list[dict[str, Any]] = []
@@ -56,12 +50,15 @@ class LMStudioChatModel(BaseChatModel):
     def _generate(self, messages: list[BaseMessage], stop: list[str] | None = None, **kwargs: Any) -> ChatResult:
         payload = self._convert_messages(messages)
         tools = kwargs.get("tools")
+        openai_tools = None
+        if tools:
+            openai_tools = [convert_to_openai_tool(t) if isinstance(t, BaseTool) else t for t in tools]
 
         response = self._client.chat.completions.create(
             model=self.model_name,
             messages=payload,
             temperature=self.temperature,
-            tools=tools,
+            tools=openai_tools,
             stop=stop,
         )
         msg = response.choices[0].message
