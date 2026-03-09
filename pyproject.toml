@@ -5,6 +5,7 @@ description = "Local AI assistant O.R.I.O.N."
 requires-python = ">=3.10"
 dependencies = [
   "langgraph>=0.2.0",
+  "langchain>=1.0.0",
   "openai>=1.0.0",
   "rich>=13.7.0",
   "prompt-toolkit>=3.0.47",
