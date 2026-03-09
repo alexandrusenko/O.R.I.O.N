@@ -47,18 +47,28 @@ class LMStudioChatModel(BaseChatModel):
                 )
         return payload
 
+    def bind_tools(
+        self,
+        tools: list[dict[str, Any] | type | BaseTool | Any],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ):
+        openai_tools = [convert_to_openai_tool(t) if isinstance(t, BaseTool) else t for t in tools]
+        if tool_choice is not None:
+            kwargs["tool_choice"] = tool_choice
+        return self.bind(tools=openai_tools, **kwargs)
+
     def _generate(self, messages: list[BaseMessage], stop: list[str] | None = None, **kwargs: Any) -> ChatResult:
         payload = self._convert_messages(messages)
-        tools = kwargs.get("tools")
-        openai_tools = None
-        if tools:
-            openai_tools = [convert_to_openai_tool(t) if isinstance(t, BaseTool) else t for t in tools]
+        openai_tools = kwargs.get("tools")
 
         response = self._client.chat.completions.create(
             model=self.model_name,
             messages=payload,
             temperature=self.temperature,
             tools=openai_tools,
+            tool_choice=kwargs.get("tool_choice"),
             stop=stop,
         )
         msg = response.choices[0].message
