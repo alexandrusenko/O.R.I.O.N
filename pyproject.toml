@@ -1,0 +1,28 @@
+[project]
+name = "orion-agent"
+version = "0.1.0"
+description = "Local AI assistant O.R.I.O.N."
+requires-python = ">=3.10"
+dependencies = [
+  "langchain>=0.3.0",
+  "langgraph>=0.2.0",
+  "openai>=1.0.0",
+  "rich>=13.7.0",
+  "prompt-toolkit>=3.0.47",
+  "pydantic>=2.7.0",
+  "requests>=2.32.0",
+  "beautifulsoup4>=4.12.3",
+  "duckduckgo-search>=6.1.0",
+  "psutil>=6.0.0",
+  "chromadb>=0.5.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["orion"]
