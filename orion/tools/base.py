@@ -13,7 +13,7 @@ except ModuleNotFoundError:  # fallback for restricted environments
 
 
 class ToolArgs(BaseModel):
-    """Base args schema for tools."""
+    """Базовая схема аргументов инструментов."""
 
 
 class BaseTool(ABC):
@@ -23,7 +23,7 @@ class BaseTool(ABC):
 
     @abstractmethod
     def execute(self, **kwargs) -> str:
-        """Execute tool and return normalized string output."""
+        """Выполняет инструмент и возвращает строковый результат."""
 
     def as_llm_spec(self) -> str:
         return f"{self.name}: {self.description}"

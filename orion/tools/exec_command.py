@@ -9,12 +9,12 @@ from orion.tools.base import BaseTool
 
 
 class ExecCommandArgs(BaseModel):
-    command: str = Field(..., description="Shell command")
+    command: str = Field(..., description="Команда оболочки")
 
 
 class ExecCommandTool(BaseTool):
     name = "exec_command"
-    description = "Execute shell command after safety checks."
+    description = "Выполняет команду оболочки после проверки безопасности."
     args_schema = ExecCommandArgs
 
     def __init__(self) -> None:
@@ -24,11 +24,11 @@ class ExecCommandTool(BaseTool):
         args = self.args_schema(**kwargs)
         decision = self.safety.evaluate(args.command)
         if not decision.allowed:
-            return f"Blocked by safety layer: {decision.reason}"
+            return f"Заблокировано слоем безопасности: {decision.reason}"
         if decision.requires_confirmation:
             return (
-                f"Confirmation required: Sir, I am about to execute `{args.command}`. "
-                "Please confirm with y/n."
+                f"Требуется подтверждение: Сэр, я собираюсь выполнить `{args.command}`. "
+                "Подтвердите выполнение (y/n)."
             )
 
         completed = subprocess.run(

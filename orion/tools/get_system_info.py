@@ -15,7 +15,7 @@ class GetSystemInfoArgs(BaseModel):
 
 class GetSystemInfoTool(BaseTool):
     name = "get_system_info"
-    description = "Return CPU, RAM, platform and local IP details."
+    description = "Возвращает информацию о CPU, RAM, платформе и локальном IP."
     args_schema = GetSystemInfoArgs
 
     def execute(self, **kwargs) -> str:
