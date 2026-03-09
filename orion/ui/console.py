@@ -38,5 +38,8 @@ class OrionConsoleUI:
         table.add_row("[cyan]Состояние[/]", state)
         self.console.print(Panel(table, border_style="white"))
 
+    def render_trace(self, stage: str, content: str) -> None:
+        self.console.print(Panel(content, title=f"Лог: {stage}", border_style="magenta"))
+
     def ask_input(self) -> str:
         return prompt("[Вы]> ")
