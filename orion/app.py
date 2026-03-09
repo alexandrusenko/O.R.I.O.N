@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from orion.config.settings import DEFAULT_SETTINGS
 from orion.core.graph import OrionGraphBuilder
 from orion.core.llm import LMStudioClient
@@ -78,6 +80,57 @@ class OrionApp:
             return f"Инструмент не найден: {tool_name}"
         return tool.execute(**tool_input)
 
+
+    @staticmethod
+    def _format_update(node_name: str, update: dict) -> str:
+        if node_name == "retriever_node":
+            ltm = update.get("ltm_context", "")
+            stm = update.get("stm_context", "")
+            return "\n".join(
+                [
+                    "Подтянул контекст памяти.",
+                    f"LTM:\n{ltm}",
+                    f"STM:\n{stm}",
+                ]
+            )
+
+        if node_name == "agent_node":
+            fragments = ["Новый шаг планирования от агента."]
+            plan = update.get("plan") or []
+            if plan:
+                fragments.append("План:\n" + "\n".join(f"- {item}" for item in plan))
+            if update.get("current_step"):
+                fragments.append(f"Текущий шаг: {update['current_step']}")
+            if update.get("expected_result"):
+                fragments.append(f"Ожидаемый результат: {update['expected_result']}")
+            if update.get("selected_tool"):
+                tool_input = json.dumps(update.get("tool_input", {}), ensure_ascii=False, indent=2)
+                fragments.append(f"Вызов инструмента: {update['selected_tool']}\nАргументы:\n{tool_input}")
+            if update.get("llm_output"):
+                fragments.append(f"Ответ/размышление агента:\n{update['llm_output']}")
+            return "\n\n".join(fragments)
+
+        if node_name == "tool_executor_node":
+            return f"Результат выполнения инструмента:\n{update.get('tool_output', '')}"
+
+        if node_name == "result_analyzer_node":
+            return "\n".join(
+                [
+                    "Анализ результата шага.",
+                    f"Попытки: {update.get('attempts', '?')}",
+                    f"Требуется перестройка плана: {update.get('replan_required', False)}",
+                    f"Комментарий: {update.get('llm_output', 'без комментария')}",
+                ]
+            )
+
+        if node_name == "memory_update_node":
+            return "Сессия сохранена в кратковременную и долговременную память."
+
+        if node_name == "human_input_node":
+            return update.get("tool_output", "Ожидание подтверждения пользователя.")
+
+        return json.dumps(update, ensure_ascii=False, indent=2)
+
     def _update_memory(self, state: dict) -> None:
         user = state.get("user_input", "")
         answer = state.get("llm_output", "")
@@ -99,8 +152,13 @@ class OrionApp:
                 continue
 
             self.ui.render_status(model_name=self.settings.model_name, state="Думаю")
-            state = self.graph.invoke({"user_input": user_input})
-            self.ui.render_agent(state.get("tool_output") or state.get("llm_output", ""))
+            final_state: dict = {}
+            for update in self.graph.stream({"user_input": user_input}):
+                for node_name, node_update in update.items():
+                    final_state.update(node_update)
+                    self.ui.render_trace(node_name, self._format_update(node_name, node_update))
+
+            self.ui.render_agent(final_state.get("tool_output") or final_state.get("llm_output", ""))
             self.ui.render_status(model_name=self.settings.model_name, state="Ожидание")
 
 
