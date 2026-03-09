@@ -8,6 +8,12 @@ class LMStudioClient:
         self.client = OpenAI(base_url=base_url, api_key="lm-studio")
         self.model_name = model_name
 
+    def close(self) -> None:
+        self.client.close()
+
+    def __del__(self) -> None:
+        self.close()
+
     def complete(self, system_prompt: str, user_input: str) -> str:
         response = self.client.chat.completions.create(
             model=self.model_name,

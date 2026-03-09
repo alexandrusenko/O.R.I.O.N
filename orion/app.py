@@ -53,6 +53,11 @@ class OrionApp:
 
         return json.dumps(update, ensure_ascii=False, indent=2)
 
+    def close(self) -> None:
+        self.agent.close()
+        self.stm.close()
+        self.ltm.close()
+
     def _update_memory(self, user_input: str, answer: str) -> None:
         self.stm.append("user", user_input)
         self.stm.append("assistant", answer)
@@ -61,39 +66,42 @@ class OrionApp:
 
     def run(self) -> None:
         self.ui.render_boot(model_name=self.settings.model_name)
-        while True:
-            user_input = self.ui.ask_input().strip()
-            if user_input.lower() in {"exit", "quit"}:
-                self.ui.render_agent("Всегда к вашим услугам, Сэр.")
-                break
-            if user_input.lower() == "обнови свои инструменты":
-                tools = self.tool_manager.reload_tools()
-                self.agent.reload_tools(tools)
-                self.ui.render_agent(f"Синхронизация завершена. Загружено инструментов: {len(tools)}.")
-                continue
+        try:
+            while True:
+                user_input = self.ui.ask_input().strip()
+                if user_input.lower() in {"exit", "quit"}:
+                    self.ui.render_agent("Всегда к вашим услугам, Сэр.")
+                    break
+                if user_input.lower() == "обнови свои инструменты":
+                    tools = self.tool_manager.reload_tools()
+                    self.agent.reload_tools(tools)
+                    self.ui.render_agent(f"Синхронизация завершена. Загружено инструментов: {len(tools)}.")
+                    continue
 
-            self.ui.render_status(model_name=self.settings.model_name, state="Думаю")
-            ltm_context, stm_context = self._retrieve_context(user_input)
-            result = self.agent.invoke(user_input=user_input, ltm_context=ltm_context, stm_context=stm_context)
+                self.ui.render_status(model_name=self.settings.model_name, state="Думаю")
+                ltm_context, stm_context = self._retrieve_context(user_input)
+                result = self.agent.invoke(user_input=user_input, ltm_context=ltm_context, stm_context=stm_context)
 
-            for tool_name, tool_args, observation in result.get("intermediate_steps", []):
-                self.ui.render_trace(
-                    "agent_node",
-                    self._format_update(
+                for tool_name, tool_args, observation in result.get("intermediate_steps", []):
+                    self.ui.render_trace(
                         "agent_node",
-                        {
-                            "selected_tool": tool_name,
-                            "tool_input": {"raw": tool_args},
-                            "llm_output": "Инструмент выбран ReAct-агентом.",
-                        },
-                    ),
-                )
-                self.ui.render_trace("tool_executor_node", self._format_update("tool_executor_node", {"tool_output": observation}))
+                        self._format_update(
+                            "agent_node",
+                            {
+                                "selected_tool": tool_name,
+                                "tool_input": {"raw": tool_args},
+                                "llm_output": "Инструмент выбран ReAct-агентом.",
+                            },
+                        ),
+                    )
+                    self.ui.render_trace("tool_executor_node", self._format_update("tool_executor_node", {"tool_output": observation}))
 
-            answer = result.get("output", "")
-            self._update_memory(user_input, answer)
-            self.ui.render_agent(answer)
-            self.ui.render_status(model_name=self.settings.model_name, state="Ожидание")
+                answer = result.get("output", "")
+                self._update_memory(user_input, answer)
+                self.ui.render_agent(answer)
+                self.ui.render_status(model_name=self.settings.model_name, state="Ожидание")
+        finally:
+            self.close()
 
 
 if __name__ == "__main__":

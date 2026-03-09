@@ -20,6 +20,54 @@ class LMStudioChatModel(BaseChatModel):
         super().__init__(model_name=model_name, base_url=base_url, temperature=temperature)
         self._client = OpenAI(base_url=base_url, api_key="lm-studio")
 
+    def close(self) -> None:
+        self._client.close()
+
+    def __del__(self) -> None:
+        self.close()
+
+    @staticmethod
+    def _normalize_content(content: Any) -> str:
+        if content is None:
+            return ""
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            text_chunks: list[str] = []
+            for chunk in content:
+                if isinstance(chunk, str):
+                    text_chunks.append(chunk)
+                    continue
+                if isinstance(chunk, dict) and chunk.get("type") == "text":
+                    text_chunks.append(str(chunk.get("text", "")))
+            return "\n".join(part for part in text_chunks if part)
+        return str(content)
+
+    @staticmethod
+    def _to_openai_tool_calls(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        openai_calls: list[dict[str, Any]] = []
+        for call in tool_calls:
+            function_block = call.get("function")
+            if isinstance(function_block, dict):
+                name = function_block.get("name", "")
+                arguments = function_block.get("arguments", "{}")
+            else:
+                name = call.get("name", "")
+                raw_args = call.get("args", {})
+                arguments = raw_args if isinstance(raw_args, str) else json.dumps(raw_args, ensure_ascii=False)
+
+            openai_calls.append(
+                {
+                    "id": str(call.get("id", "")),
+                    "type": "function",
+                    "function": {
+                        "name": str(name),
+                        "arguments": str(arguments),
+                    },
+                }
+            )
+        return openai_calls
+
     @property
     def _llm_type(self) -> str:
         return "lmstudio-openai"
@@ -29,19 +77,19 @@ class LMStudioChatModel(BaseChatModel):
         for message in messages:
             role = message.type
             if role == "human":
-                payload.append({"role": "user", "content": message.content})
+                payload.append({"role": "user", "content": self._normalize_content(message.content)})
             elif role == "ai":
-                entry: dict[str, Any] = {"role": "assistant", "content": message.content}
+                entry: dict[str, Any] = {"role": "assistant", "content": self._normalize_content(message.content)}
                 if getattr(message, "tool_calls", None):
-                    entry["tool_calls"] = message.tool_calls
+                    entry["tool_calls"] = self._to_openai_tool_calls(message.tool_calls)
                 payload.append(entry)
             elif role == "system":
-                payload.append({"role": "system", "content": message.content})
+                payload.append({"role": "system", "content": self._normalize_content(message.content)})
             elif role == "tool":
                 payload.append(
                     {
                         "role": "tool",
-                        "content": message.content,
+                        "content": self._normalize_content(message.content),
                         "tool_call_id": message.tool_call_id,
                     }
                 )

@@ -41,6 +41,9 @@ class LangChainOrionAgent:
     def reload_tools(self, tools: dict[str, BaseTool]) -> None:
         self.graph = self._build_graph(tools)
 
+    def close(self) -> None:
+        self.model.close()
+
     def invoke(self, user_input: str, ltm_context: str, stm_context: str) -> dict:
         contextualized = (
             f"Контекст LTM:\n{ltm_context}\n\n"
