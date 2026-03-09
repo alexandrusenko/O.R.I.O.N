@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import StructuredTool
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 
 from orion.core.lc_model import LMStudioChatModel
 from orion.tools.base import BaseTool
@@ -24,7 +24,7 @@ class LangChainOrionAgent:
 
     def _build_graph(self, tools: dict[str, BaseTool]):
         lc_tools = [self._to_langchain_tool(tool) for tool in tools.values()]
-        return create_react_agent(model=self.model, tools=lc_tools, prompt=SYSTEM_PROMPT)
+        return create_agent(model=self.model, tools=lc_tools, system_prompt=SYSTEM_PROMPT)
 
     @staticmethod
     def _to_langchain_tool(tool: BaseTool) -> StructuredTool:
