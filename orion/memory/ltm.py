@@ -63,6 +63,10 @@ class LTMStore:
         scored.sort(key=lambda x: x[0], reverse=True)
         return [fact for score, fact in scored[:top_k] if score > 0] or [fact for _, fact in scored[-top_k:]]
 
+
+    def close(self) -> None:
+        """Совместимость с жизненным циклом приложения."""
+
     @staticmethod
     def _tokenize(text: str) -> list[str]:
         return re.findall(r"[a-zA-Zа-яА-Я0-9_]+", text.lower())

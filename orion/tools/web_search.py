@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from duckduckgo_search import DDGS
 from orion.utils.schema import BaseModel, Field
 
 from orion.tools.base import BaseTool
+
+try:
+    from ddgs import DDGS
+except ImportError:  # pragma: no cover - fallback for old dependency name
+    from duckduckgo_search import DDGS
 
 
 class WebSearchArgs(BaseModel):

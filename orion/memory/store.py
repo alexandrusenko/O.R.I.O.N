@@ -35,6 +35,10 @@ class STMStore:
             conn.execute("INSERT INTO messages(role, content) VALUES (?, ?)", (role, content))
             conn.commit()
 
+
+    def close(self) -> None:
+        """Совместимость с жизненным циклом приложения."""
+
     def recent(self, limit: int = 6) -> list[Message]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
